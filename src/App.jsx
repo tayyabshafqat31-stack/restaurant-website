@@ -18,13 +18,36 @@ import {
   Mail
 } from 'lucide-react';
 
+// Firebase Imports
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+// --- Your Specific Firebase Configuration ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBskIUexXZR0m4txgGm5CWk1oETW5ygZdg",
+  authDomain: "ember-oak-e4c45.firebaseapp.com",
+  projectId: "ember-oak-e4c45",
+  storageBucket: "ember-oak-e4c45.firebasestorage.app",
+  messagingSenderId: "314291658657",
+  appId: "1:314291658657:web:54fa4d2e783cbd03aeb5e0"
+};
+
+// Initialize Firebase (with check to prevent multiple initialization errors)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Use __app_id if available (standard for this environment), fallback to your project ID
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'ember-oak-e4c45';
+
 // --- Data ---
 const menuItems = [
   { id: 1, name: 'Finger Fish', category: 'starters', price: 4, description: 'Crispy golden fish strips, served with tartar sauce and lemon wedges', image: 'fish.jpg' },
   { id: 2, name: 'Chicken Dumplings', category: 'starters', price: 4, description: 'Hand-crafted dumplings filled with seasoned chicken, ginger soy dipping sauce', image: 'dumpling.jpg' },
   { id: 3, name: 'Creamy Chicken Soup', category: 'starters', price: 6, description: 'Rich and comforting chicken soup with vegetables and fresh herbs', image: 'soup.jpg' },
-  { id: 4, name: 'Beaf Stake', category: 'mains', price: 8, description: '28-day dry-aged ribeye, bone marrow butter, roasted shallots', image: 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=600&q=80' },
-  { id: 5, name: ' Pizza', category: 'mains', price: 10, description: 'Crispy thin crust topped with roasted duck, hoisin sauce, mozzarella, and scallions', image: 'pizza.jpg' },
+  { id: 4, name: 'Beef Steak', category: 'mains', price: 8, description: '28-day dry-aged ribeye, bone marrow butter, roasted shallots', image: 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=600&q=80' },
+  { id: 5, name: 'Signature Pizza', category: 'mains', price: 10, description: 'Crispy thin crust topped with roasted duck, hoisin sauce, mozzarella, and scallions', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80' },
   { id: 6, name: 'Chicken Broast', category: 'mains', price: 10, description: 'Pressure-fried golden chicken, juicy inside and crispy outside, served with fries and coleslaw', image: 'chicken.jpeg' },
   { id: 7, name: 'Burnt Honey Panna Cotta', category: 'desserts', price: 3, description: 'Caramelized honey cream, fresh berries, mint', image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=80' },
   { id: 8, name: 'Chocolate Ember Tart', category: 'desserts', price: 5, description: 'Dark chocolate ganache, sea salt, vanilla chantilly', image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&q=80' },
@@ -54,9 +77,29 @@ export default function App() {
   const [currentFilter, setCurrentFilter] = useState('all');
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const heroBgRef = useRef(null);
 
-  // --- Effects ---
+  // --- Firebase Auth Setup ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth failed:", error);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  // --- Scroll & Reveal Effects ---
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
@@ -67,7 +110,6 @@ export default function App() {
 
     window.addEventListener('scroll', handleScroll);
 
-    // Reveal animations using Intersection Observer
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -91,10 +133,64 @@ export default function App() {
       : menuItems.filter(item => item.category === currentFilter);
   }, [currentFilter]);
 
-  const handleReservation = (e) => {
+  // --- Email Notification Function ---
+  const sendEmailNotification = async (data) => {
+    try {
+      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: 'service_etu7asn', 
+          template_id: 'template_vruen3p', 
+          user_id: 'LK95ADyfRsk1p19PU', 
+          template_params: {
+            owner_email: 'tayyabshafqat31@gmail.com',
+            customer_name: data.fullName,
+            customer_email: data.email,
+            guests: data.guests,
+            date: data.reservationDate,
+            requests: data.specialRequests || 'None'
+          }
+        })
+      });
+    } catch (err) {
+      console.error("Email delivery failed:", err);
+    }
+  };
+
+  // --- Handle Reservation ---
+  const handleReservation = async (e) => {
     e.preventDefault();
-    setShowSuccessModal(true);
-    e.target.reset();
+    if (!user) return; 
+
+    setIsSubmitting(true);
+    const formData = new FormData(e.target);
+    
+    const reservationData = {
+      fullName: formData.get('fullName'),
+      email: formData.get('email'),
+      guests: formData.get('guests'),
+      reservationDate: formData.get('reservationDate'),
+      specialRequests: formData.get('specialRequests'),
+      createdAt: serverTimestamp(),
+      userId: user.uid
+    };
+
+    try {
+      // Save to Firestore using mandatory path structure
+      const reservationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'reservations');
+      await addDoc(reservationsRef, reservationData);
+      
+      // Trigger Email Notification
+      await sendEmailNotification(reservationData);
+      
+      setShowSuccessModal(true);
+      e.target.reset();
+    } catch (error) {
+      console.error("Error saving reservation:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -105,7 +201,7 @@ export default function App() {
         .font-display { font-family: 'Cormorant Garamond', serif; }
         
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(40px); }
+          from { opacity: 0; transform: translateY(30px); }
           to { opacity: 1; transform: translateY(0); }
         }
         
@@ -129,7 +225,6 @@ export default function App() {
 
         .nav-blur { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
         
-        .menu-card:hover img { transform: scale(1.1); }
         .btn-shine { position: relative; overflow: hidden; }
         .btn-shine::after {
           content: '';
@@ -273,7 +368,7 @@ export default function App() {
             </h2>
             <div className="w-16 h-[2px] bg-[#c9a227] mb-8"></div>
             <p className="text-[#8a8578] text-lg leading-relaxed mb-6">
-              Founded in 2009, Ember & Oak emerged from a simple vision: to create a dining experience that celebrates the primal connection between fire and food. Our executive chef, Marcus Chen, brings decades of expertise in open-fire cooking techniques.
+              Founded in 2009, Ember & Oak emerged from a simple vision: to create a dining experience that celebrates the primal connection between fire and food. Our executive chef brings decades of expertise in open-fire cooking techniques.
             </p>
             <div className="grid grid-cols-2 gap-8 mb-10">
               <div className="flex gap-4">
@@ -307,13 +402,15 @@ export default function App() {
             <p className="text-[#8a8578] max-w-2xl mx-auto">Crafted with passion using the finest seasonal ingredients.</p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4 mb-16 reveal">
+          <div className="flex flex-wrap justify-center gap-4 mb-16 reveal active">
             {['all', 'starters', 'mains', 'desserts'].map(cat => (
               <button 
                 key={cat}
                 onClick={() => setCurrentFilter(cat)}
                 className={`px-8 py-2 rounded-full border text-[10px] tracking-[0.2em] font-bold uppercase transition-all duration-300 ${
-                  currentFilter === cat ? 'bg-[#c9a227] border-[#c9a227] text-black' : 'border-[#2a2a2a] text-[#8a8578] hover:border-[#c9a227] hover:text-[#c9a227]'
+                  currentFilter === cat 
+                    ? 'bg-[#c9a227] border-[#c9a227] text-black' 
+                    : 'border-[#2a2a2a] text-[#8a8578] hover:border-[#c9a227] hover:text-[#c9a227]'
                 }`}
               >
                 {cat}
@@ -321,9 +418,12 @@ export default function App() {
             ))}
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 min-h-[400px]"> 
             {filteredMenu.map((item) => (
-              <div key={item.id} className="reveal-scale group bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#c9a227]/40 transition-all duration-500">
+              <div 
+                key={item.id} 
+                className="reveal-scale active group bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#c9a227]/40 transition-all duration-500 animate-[fadeInUp_0.5s_ease-out]"
+              >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute top-4 right-4 bg-[#c9a227] text-black font-bold px-3 py-1 rounded text-sm">
@@ -420,7 +520,7 @@ export default function App() {
             <div className="space-y-8">
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 rounded-lg bg-[#c9a227]/10 flex items-center justify-center text-[#c9a227]"><MapPin /></div>
-                <div><h4 className="font-bold">Location</h4><p className="text-sm text-[#8a8578]"> RC7X+CW4, Tehsil Rd, Waris Colony Aamir Colony, Okara</p></div>
+                <div><h4 className="font-bold">Location</h4><p className="text-sm text-[#8a8578]"> RC7X+CW4, Tehsil Rd, Okara, Punjab</p></div>
               </div>
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 rounded-lg bg-[#c9a227]/10 flex items-center justify-center text-[#c9a227]"><Clock /></div>
@@ -428,7 +528,7 @@ export default function App() {
               </div>
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 rounded-lg bg-[#c9a227]/10 flex items-center justify-center text-[#c9a227]"><Phone /></div>
-                <div><h4 className="font-bold">Contact</h4><p className="text-sm text-[#8a8578]">+92 3286930517</p></div>
+                <div><h4 className="font-bold">Contact</h4><p className="text-sm text-[#8a8578]">+92 328 6930517</p></div>
               </div>
             </div>
           </div>
@@ -437,20 +537,20 @@ export default function App() {
             <form onSubmit={handleReservation} className="bg-[#141414] border border-[#2a2a2a] p-8 md:p-12 rounded-2xl shadow-2xl">
               <h3 className="font-display text-2xl font-bold mb-8">Make a Reservation</h3>
               <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <input required type="text" placeholder="Full Name" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors" />
-                <input required type="email" placeholder="Email Address" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors" />
+                <input required name="fullName" type="text" placeholder="Full Name" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors" />
+                <input required name="email" type="email" placeholder="Email Address" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors" />
               </div>
               <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <select required className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors">
+                <select required name="guests" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors text-[#8a8578]">
                   <option value="">Guests</option>
-                  {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} Guests</option>)}
-                  <option value="7+">7+ Guests</option>
+                  {[1,2,3,4,5,6].map(n => <option key={n} value={n} className="text-[#f5f5f0]">{n} Guests</option>)}
+                  <option value="7+" className="text-[#f5f5f0]">7+ Guests</option>
                 </select>
-                <input required type="date" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors" />
+                <input required name="reservationDate" type="date" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors text-[#8a8578]" />
               </div>
-              <textarea placeholder="Special Requests" rows="4" className="w-full bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors mb-8 resize-none"></textarea>
-              <button type="submit" className="btn-shine w-full bg-[#c9a227] text-black py-5 font-bold tracking-[0.2em] rounded-lg transition-transform active:scale-95 flex items-center justify-center gap-3">
-                CONFIRM RESERVATION <Check size={20} />
+              <textarea name="specialRequests" placeholder="Special Requests" rows="4" className="w-full bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors mb-8 resize-none"></textarea>
+              <button disabled={isSubmitting} type="submit" className={`btn-shine w-full bg-[#c9a227] text-black py-5 font-bold tracking-[0.2em] rounded-lg transition-transform active:scale-95 flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                {isSubmitting ? 'SAVING...' : 'CONFIRM RESERVATION'} <Check size={20} />
               </button>
             </form>
           </div>
@@ -486,19 +586,19 @@ export default function App() {
               <li className="flex justify-between"><span>Tue - Thu</span> <span className="text-[#f5f5f0]">5PM - 10PM</span></li>
               <li className="flex justify-between"><span>Fri - Sat</span> <span className="text-[#f5f5f0]">5PM - 11PM</span></li>
               <li className="flex justify-between"><span>Sunday</span> <span className="text-[#f5f5f0]">4PM - 9PM</span></li>
-              <li className="flex justify-between"><span>Monday</span> <span className="text-[#c9a227]">4PM - 9PM</span></li>
+              <li className="flex justify-between"><span>Monday</span> <span className="text-[#c9a227]">CLOSED</span></li>
             </ul>
           </div>
           <div>
             <h4 className="font-display text-xl font-bold mb-8">Newsletter</h4>
             <p className="text-sm text-[#8a8578] mb-6">Subscribe for exclusive offers and updates.</p>
-            <form className="flex gap-2">
+            <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
               <input type="email" placeholder="Your email" className="bg-[#0a0a0a] border border-[#2a2a2a] px-4 py-3 rounded-lg flex-1 text-sm focus:outline-none focus:border-[#c9a227]" />
               <button className="bg-[#c9a227] text-black px-4 rounded-lg hover:bg-[#a68520] transition-colors"><Mail size={18} /></button>
             </form>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-10 border-t border-[#2a2a2a] flex flex-col md:row justify-between items-center gap-4 text-xs text-[#8a8578] tracking-widest">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-10 border-t border-[#2a2a2a] flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#8a8578] tracking-widest">
           <p>© 2025 EMBER & OAK. ALL RIGHTS RESERVED.</p>
           <div className="flex gap-8">
             <a href="#" className="hover:text-[#c9a227]">PRIVACY POLICY</a>
@@ -511,12 +611,12 @@ export default function App() {
       {showSuccessModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-[#0a0a0a]/90 backdrop-blur-md" onClick={() => setShowSuccessModal(false)}></div>
-          <div className="relative bg-[#141414] border border-[#c9a227] rounded-2xl p-10 max-w-md w-full text-center animate-[revealScale_0.3s_ease-out]">
+          <div className="relative bg-[#141414] border border-[#c9a227] rounded-2xl p-10 max-w-md w-full text-center">
             <div className="w-20 h-20 bg-[#c9a227]/20 text-[#c9a227] rounded-full flex items-center justify-center mx-auto mb-8">
               <Check size={40} />
             </div>
             <h3 className="font-display text-3xl font-bold mb-4">Confirmed!</h3>
-            <p className="text-[#8a8578] mb-8 leading-relaxed">Thank you for your reservation. We've sent a confirmation email with your booking details. See you soon!</p>
+            <p className="text-[#8a8578] mb-8 leading-relaxed">Thank you for your reservation. We've sent a confirmation email to {user?.email || 'you'} and notified the owner. See you soon!</p>
             <button 
               onClick={() => setShowSuccessModal(false)}
               className="bg-[#c9a227] text-black w-full py-4 font-bold tracking-widest rounded-lg"
