@@ -48,9 +48,9 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'ember-oak-e4c45';
 
 // --- Data ---
 const menuItems = [
-  { id: 1, name: 'Finger Fish', category: 'starters', price: 4, description: 'Crispy golden fish strips, served with tartar sauce and lemon wedges', image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&q=80' },
-  { id: 2, name: 'Chicken Dumplings', category: 'starters', price: 4, description: 'Hand-crafted dumplings filled with seasoned chicken, ginger soy dipping sauce', image: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=600&q=80' },
-  { id: 3, name: 'Creamy Chicken Soup', category: 'starters', price: 6, description: 'Rich and comforting chicken soup with vegetables and fresh herbs', image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&q=80' },
+  { id: 1, name: 'Finger Fish', category: 'starters', price: 4, description: 'Crispy golden fish strips, served with tartar sauce and lemon wedges', image: 'fish.jpg' },
+  { id: 2, name: 'Chicken Dumplings', category: 'starters', price: 4, description: 'Hand-crafted dumplings filled with seasoned chicken, ginger soy dipping sauce', image: 'dumpling.jpg' },
+  { id: 3, name: 'Creamy Chicken Soup', category: 'starters', price: 6, description: 'Rich and comforting chicken soup with vegetables and fresh herbs', image: 'soup.jpg' },
   { id: 4, name: 'Beef Steak', category: 'mains', price: 8, description: '28-day dry-aged ribeye, bone marrow butter, roasted shallots', image: 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=600&q=80' },
   { id: 5, name: 'Signature Pizza', category: 'mains', price: 10, description: 'Crispy thin crust topped with roasted duck, hoisin sauce, mozzarella, and scallions', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80' },
   { id: 6, name: 'Chicken Broast', category: 'mains', price: 10, description: 'Pressure-fried golden chicken, juicy inside and crispy outside, served with fries and coleslaw', image: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=600&q=80' },
