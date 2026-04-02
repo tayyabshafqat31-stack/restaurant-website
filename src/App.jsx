@@ -15,7 +15,12 @@ import {
   Instagram,
   Facebook,
   Twitter,
-  Mail
+  Mail,
+  ShoppingCart,
+  Plus,
+  Minus,
+  Trash2,
+  Truck
 } from 'lucide-react';
 
 // Firebase Imports
@@ -23,32 +28,32 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-// --- Your Specific Firebase Configuration ---
-const firebaseConfig = {
-  apiKey: "AIzaSyBskIUexXZR0m4txgGm5CWk1oETW5ygZdg",
-  authDomain: "ember-oak-e4c45.firebaseapp.com",
-  projectId: "ember-oak-e4c45",
-  storageBucket: "ember-oak-e4c45.firebasestorage.app",
-  messagingSenderId: "314291658657",
-  appId: "1:314291658657:web:54fa4d2e783cbd03aeb5e0"
-};
+// --- Firebase Configuration ---
+// Use environment variables if available, otherwise fallback to hardcoded (though environment is preferred to avoid token mismatch)
+const firebaseConfig = typeof __firebase_config !== 'undefined' 
+  ? JSON.parse(__firebase_config) 
+  : {
+      apiKey: "AIzaSyBskIUexXZR0m4txgGm5CWk1oETW5ygZdg",
+      authDomain: "ember-oak-e4c45.firebaseapp.com",
+      projectId: "ember-oak-e4c45",
+      storageBucket: "ember-oak-e4c45.firebasestorage.app",
+      messagingSenderId: "314291658657",
+      appId: "1:314291658657:web:54fa4d2e783cbd03aeb5e0"
+    };
 
-// Initialize Firebase (with check to prevent multiple initialization errors)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// Use __app_id if available (standard for this environment), fallback to your project ID
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'ember-oak-e4c45';
 
 // --- Data ---
 const menuItems = [
-  { id: 1, name: 'Finger Fish', category: 'starters', price: 4, description: 'Crispy golden fish strips, served with tartar sauce and lemon wedges', image: 'fish.jpg' },
-  { id: 2, name: 'Chicken Dumplings', category: 'starters', price: 4, description: 'Hand-crafted dumplings filled with seasoned chicken, ginger soy dipping sauce', image: 'dumpling.jpg' },
-  { id: 3, name: 'Creamy Chicken Soup', category: 'starters', price: 6, description: 'Rich and comforting chicken soup with vegetables and fresh herbs', image: 'soup.jpg' },
+  { id: 1, name: 'Finger Fish', category: 'starters', price: 4, description: 'Crispy golden fish strips, served with tartar sauce and lemon wedges', image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&q=80' },
+  { id: 2, name: 'Chicken Dumplings', category: 'starters', price: 4, description: 'Hand-crafted dumplings filled with seasoned chicken, ginger soy dipping sauce', image: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=600&q=80' },
+  { id: 3, name: 'Creamy Chicken Soup', category: 'starters', price: 6, description: 'Rich and comforting chicken soup with vegetables and fresh herbs', image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&q=80' },
   { id: 4, name: 'Beef Steak', category: 'mains', price: 8, description: '28-day dry-aged ribeye, bone marrow butter, roasted shallots', image: 'https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=600&q=80' },
   { id: 5, name: 'Signature Pizza', category: 'mains', price: 10, description: 'Crispy thin crust topped with roasted duck, hoisin sauce, mozzarella, and scallions', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80' },
-  { id: 6, name: 'Chicken Broast', category: 'mains', price: 10, description: 'Pressure-fried golden chicken, juicy inside and crispy outside, served with fries and coleslaw', image: 'chicken.jpeg' },
+  { id: 6, name: 'Chicken Broast', category: 'mains', price: 10, description: 'Pressure-fried golden chicken, juicy inside and crispy outside, served with fries and coleslaw', image: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=600&q=80' },
   { id: 7, name: 'Burnt Honey Panna Cotta', category: 'desserts', price: 3, description: 'Caramelized honey cream, fresh berries, mint', image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=80' },
   { id: 8, name: 'Chocolate Ember Tart', category: 'desserts', price: 5, description: 'Dark chocolate ganache, sea salt, vanilla chantilly', image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&q=80' },
   { id: 9, name: 'Smoked Vanilla Creme', category: 'desserts', price: 6, description: 'Smoked vanilla bean, caramel tuile, seasonal fruit', image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&q=80' }
@@ -66,9 +71,9 @@ const galleryItems = [
 ];
 
 const testimonials = [
-  { name: 'Sarah Mitchell', role: 'Food Critic', text: 'Ember & Oak redefined fine dining for me. The finger fish was absolutely exceptional - perfectly crispy outside, tender inside. An unforgettable experience.', rating: 5 },
-  { name: 'James Chen', role: 'Regular Guest', text: 'Every visit feels like coming home to luxury. The chicken dumplings are the best I have ever had. This is our favorite spot for celebrations.', rating: 5 },
-  { name: 'Emily Rodriguez', role: 'Wine Enthusiast', text: 'The creamy chicken soup warmed my soul on a cold evening. Combined with the chef\'s recommendations, it was a journey through flavors I never knew existed.', rating: 5 }
+  { name: 'Sarah Mitchell', role: 'Food Critic', text: 'Ember & Oak redefined fine dining for me. The finger fish was absolutely exceptional - perfectly crispy outside, tender inside.', rating: 5 },
+  { name: 'James Chen', role: 'Regular Guest', text: 'Every visit feels like coming home to luxury. The chicken dumplings are the best I have ever had.', rating: 5 },
+  { name: 'Emily Rodriguez', role: 'Wine Enthusiast', text: 'The creamy chicken soup warmed my soul on a cold evening. A journey through flavors.', rating: 5 }
 ];
 
 export default function App() {
@@ -76,22 +81,30 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentFilter, setCurrentFilter] = useState('all');
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(null); // 'reservation' or 'order'
   const [user, setUser] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState('cart'); // 'cart' or 'delivery'
   const heroBgRef = useRef(null);
 
-  // --- Firebase Auth Setup ---
+  // --- Firebase Auth ---
   useEffect(() => {
     const initAuth = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
+          try {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } catch (tokenError) {
+            // If custom token fails (like a mismatch), fallback to anonymous
+            await signInAnonymously(auth);
+          }
         } else {
           await signInAnonymously(auth);
         }
       } catch (error) {
-        console.error("Auth failed:", error);
+        console.error("Critical Auth failure:", error);
       }
     };
     initAuth();
@@ -99,7 +112,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // --- Scroll & Reveal Effects ---
+  // --- Effects ---
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
@@ -107,20 +120,13 @@ export default function App() {
         heroBgRef.current.style.transform = `translateY(${window.scrollY * 0.4}px)`;
       }
     };
-
     window.addEventListener('scroll', handleScroll);
-
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('active');
-        }
+        if (entry.isIntersecting) entry.target.classList.add('active');
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-
-    const reveals = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
-    reveals.forEach(el => observer.observe(el));
-
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => observer.observe(el));
     return () => {
       window.removeEventListener('scroll', handleScroll);
       observer.disconnect();
@@ -128,45 +134,40 @@ export default function App() {
   }, []);
 
   const filteredMenu = useMemo(() => {
-    return currentFilter === 'all' 
-      ? menuItems 
-      : menuItems.filter(item => item.category === currentFilter);
+    return currentFilter === 'all' ? menuItems : menuItems.filter(item => item.category === currentFilter);
   }, [currentFilter]);
 
-  // --- Email Notification Function ---
-  const sendEmailNotification = async (data) => {
-    try {
-      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          service_id: 'service_kxjt5mr', 
-          template_id: 'template_vruen3p', 
-          user_id: 'LK95ADyfRsk1p19PU', 
-          template_params: {
-            owner_email: 'tayyabshafqat31@gmail.com',
-            customer_name: data.fullName,
-            customer_email: data.email,
-            guests: data.guests,
-            date: data.reservationDate,
-            requests: data.specialRequests || 'None'
-          }
-        })
-      });
-    } catch (err) {
-      console.error("Email delivery failed:", err);
-    }
+  // --- Cart Logic ---
+  const addToCart = (item) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.id === item.id);
+      if (existing) {
+        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
   };
 
-  // --- Handle Reservation ---
+  const updateQuantity = (id, delta) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        const newQty = Math.max(0, item.quantity + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
+  };
+
+  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // --- Handlers ---
   const handleReservation = async (e) => {
     e.preventDefault();
-    if (!user) return; 
-
+    if (!user) return;
     setIsSubmitting(true);
     const formData = new FormData(e.target);
-    
-    const reservationData = {
+    const data = {
       fullName: formData.get('fullName'),
       email: formData.get('email'),
       guests: formData.get('guests'),
@@ -175,66 +176,52 @@ export default function App() {
       createdAt: serverTimestamp(),
       userId: user.uid
     };
-
     try {
-      // Save to Firestore using mandatory path structure
-      const reservationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'reservations');
-      await addDoc(reservationsRef, reservationData);
-      
-      // Trigger Email Notification
-      await sendEmailNotification(reservationData);
-      
-      setShowSuccessModal(true);
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'reservations'), data);
+      setShowSuccessModal('reservation');
       e.target.reset();
-    } catch (error) {
-      console.error("Error saving reservation:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (err) { console.error("Reservation Error:", err); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const handleOrder = async (e) => {
+    e.preventDefault();
+    if (!user || cart.length === 0) return;
+    setIsSubmitting(true);
+    const formData = new FormData(e.target);
+    const orderData = {
+      customerName: formData.get('name'),
+      phone: formData.get('phone'),
+      address: formData.get('address'),
+      items: cart,
+      total: cartTotal,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+      userId: user.uid
+    };
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), orderData);
+      setCart([]);
+      setIsCartOpen(false);
+      setCheckoutStep('cart');
+      setShowSuccessModal('order');
+    } catch (err) { console.error("Order Error:", err); }
+    finally { setIsSubmitting(false); }
   };
 
   return (
     <div className="bg-[#0a0a0a] text-[#f5f5f0] font-['Montserrat'] overflow-x-hidden selection:bg-[#c9a227] selection:text-black">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap');
-        
         .font-display { font-family: 'Cormorant Garamond', serif; }
-        
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-60px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-
-        .reveal { opacity: 0; transform: translateY(50px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .reveal-left { opacity: 0; transform: translateX(-80px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .reveal-right { opacity: 0; transform: translateX(80px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .reveal-scale { opacity: 0; transform: scale(0.9); transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        .active { opacity: 1 !important; transform: translate(0) scale(1) !important; }
-        
-        .text-gradient {
-          background: linear-gradient(135deg, #c9a227 0%, #f4d47c 50%, #c9a227 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
+        .reveal-left { opacity: 0; transform: translateX(-50px); transition: all 0.8s ease-out; }
+        .reveal-right { opacity: 0; transform: translateX(50px); transition: all 0.8s ease-out; }
+        .reveal-scale { opacity: 0; transform: scale(0.95); transition: all 0.8s ease-out; }
+        .active { opacity: 1 !important; transform: none !important; }
+        .text-gradient { background: linear-gradient(135deg, #c9a227 0%, #f4d47c 50%, #c9a227 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .nav-blur { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-        
-        .btn-shine { position: relative; overflow: hidden; }
-        .btn-shine::after {
-          content: '';
-          position: absolute;
-          top: -50%; left: -100%; width: 50%; height: 200%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-          transform: rotate(25deg);
-          transition: 0.5s;
-        }
-        .btn-shine:hover::after { left: 150%; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* Navigation */}
@@ -252,52 +239,140 @@ export default function App() {
 
           <div className="hidden lg:flex items-center gap-10">
             {['HOME', 'ABOUT', 'MENU', 'GALLERY', 'RESERVATION'].map((link) => (
-              <a 
-                key={link} 
-                href={`#${link.toLowerCase()}`}
-                className="text-xs font-medium tracking-widest text-[#8a8578] hover:text-[#c9a227] transition-colors relative group"
-              >
+              <a key={link} href={`#${link.toLowerCase()}`} className="text-xs font-medium tracking-widest text-[#8a8578] hover:text-[#c9a227] transition-colors relative group">
                 {link}
                 <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#c9a227] transition-all duration-300 group-hover:w-full"></span>
               </a>
             ))}
           </div>
 
-          <div className="hidden lg:block">
-            <a href="#reservation" className="btn-shine bg-[#c9a227] text-black px-6 py-3 text-xs font-bold tracking-widest rounded hover:bg-[#a68520] transition-colors">
-              BOOK A TABLE
-            </a>
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2 text-[#c9a227] hover:scale-110 transition-transform"
+            >
+              <ShoppingCart size={24} />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+            <div className="hidden lg:block">
+              <a href="#reservation" className="bg-[#c9a227] text-black px-6 py-3 text-xs font-bold tracking-widest rounded hover:bg-[#a68520] transition-colors">
+                BOOK A TABLE
+              </a>
+            </div>
+            <button className="lg:hidden text-[#f5f5f0]" onClick={() => setMobileMenuOpen(true)}>
+              <Menu size={28} />
+            </button>
           </div>
-
-          <button className="lg:hidden text-[#f5f5f0]" onClick={() => setMobileMenuOpen(true)}>
-            <Menu size={28} />
-          </button>
         </div>
       </nav>
 
-      {/* Mobile Menu */}
-      <div className={`fixed inset-0 z-[60] bg-[#0a0a0a] transition-transform duration-500 ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="p-8 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-16">
-            <span className="font-display text-2xl font-bold text-[#c9a227]">Ember & Oak</span>
-            <button onClick={() => setMobileMenuOpen(false)}><X size={32} /></button>
+      {/* Cart Drawer */}
+      <div className={`fixed inset-0 z-[100] transition-all duration-500 ${isCartOpen ? 'visible' : 'invisible'}`}>
+        <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-500 ${isCartOpen ? 'opacity-100' : 'opacity-0'}`} onClick={() => setIsCartOpen(false)} />
+        <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-[#0a0a0a] border-l border-[#2a2a2a] shadow-2xl transition-transform duration-500 transform ${isCartOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col`}>
+          <div className="p-6 border-b border-[#2a2a2a] flex items-center justify-between">
+            <h2 className="font-display text-2xl font-bold flex items-center gap-3">
+              {checkoutStep === 'delivery' ? <Truck className="text-[#c9a227]" /> : <ShoppingCart className="text-[#c9a227]" />}
+              {checkoutStep === 'delivery' ? 'Delivery Details' : 'Your Order'}
+            </h2>
+            <button onClick={() => { setIsCartOpen(false); setCheckoutStep('cart'); }} className="p-2 hover:bg-white/5 rounded-full transition-colors"><X /></button>
           </div>
-          <div className="flex flex-col gap-8">
-            {['Home', 'About', 'Menu', 'Gallery', 'Reservation'].map((link) => (
-              <a 
-                key={link} 
-                href={`#${link.toLowerCase()}`} 
-                className="font-display text-4xl"
-                onClick={() => setMobileMenuOpen(false)}
+
+          <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+            {checkoutStep === 'cart' ? (
+              <>
+                {cart.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+                    <ShoppingCart size={64} className="mb-4" />
+                    <p className="text-xl font-display">Your cart is empty</p>
+                    <p className="text-sm mt-2">Explore our menu and add some flavors!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {cart.map(item => (
+                      <div key={item.id} className="flex gap-4 items-center">
+                        <img src={item.image} className="w-20 h-20 object-cover rounded-lg" alt={item.name} />
+                        <div className="flex-1">
+                          <h4 className="font-bold text-[#f5f5f0]">{item.name}</h4>
+                          <p className="text-[#c9a227] font-bold text-sm">${item.price}</p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <div className="flex items-center border border-[#2a2a2a] rounded overflow-hidden">
+                              <button onClick={() => updateQuantity(item.id, -1)} className="p-1 px-2 hover:bg-white/5"><Minus size={14} /></button>
+                              <span className="px-3 text-sm font-bold">{item.quantity}</span>
+                              <button onClick={() => updateQuantity(item.id, 1)} className="p-1 px-2 hover:bg-white/5"><Plus size={14} /></button>
+                            </div>
+                            <button onClick={() => updateQuantity(item.id, -item.quantity)} className="text-red-500/60 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                          </div>
+                        </div>
+                        <div className="text-right font-bold text-lg">
+                          ${item.price * item.quantity}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <form id="order-form" onSubmit={handleOrder} className="space-y-6">
+                <div>
+                  <label className="block text-xs tracking-widest text-[#8a8578] uppercase mb-2">Full Name</label>
+                  <input required name="name" type="text" className="w-full bg-[#141414] border border-[#2a2a2a] p-4 rounded-lg focus:border-[#c9a227] outline-none transition-colors" />
+                </div>
+                <div>
+                  <label className="block text-xs tracking-widest text-[#8a8578] uppercase mb-2">Phone Number</label>
+                  <input required name="phone" type="tel" className="w-full bg-[#141414] border border-[#2a2a2a] p-4 rounded-lg focus:border-[#c9a227] outline-none transition-colors" />
+                </div>
+                <div>
+                  <label className="block text-xs tracking-widest text-[#8a8578] uppercase mb-2">Delivery Address</label>
+                  <textarea required name="address" rows="3" className="w-full bg-[#141414] border border-[#2a2a2a] p-4 rounded-lg focus:border-[#c9a227] outline-none transition-colors resize-none"></textarea>
+                </div>
+                <div className="p-4 bg-[#c9a227]/10 border border-[#c9a227]/20 rounded-lg flex items-start gap-3">
+                  <Clock className="text-[#c9a227] mt-1" size={18} />
+                  <p className="text-xs text-[#8a8578] leading-relaxed">
+                    Estimated delivery time: <span className="text-[#f5f5f0] font-bold">30-45 minutes</span>. Payment will be collected as Cash on Delivery.
+                  </p>
+                </div>
+              </form>
+            )}
+          </div>
+
+          <div className="p-6 border-t border-[#2a2a2a] bg-[#0d0d0d]">
+            <div className="flex justify-between items-end mb-6">
+              <span className="text-[#8a8578] uppercase tracking-widest text-xs">Total Amount</span>
+              <span className="text-3xl font-display font-bold text-[#c9a227]">${cartTotal}</span>
+            </div>
+            
+            {checkoutStep === 'cart' ? (
+              <button 
+                disabled={cart.length === 0}
+                onClick={() => setCheckoutStep('delivery')}
+                className="w-full bg-[#c9a227] text-black py-4 rounded-lg font-bold tracking-widest hover:bg-[#a68520] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {link}
-              </a>
-            ))}
-          </div>
-          <div className="mt-auto">
-             <a href="#reservation" onClick={() => setMobileMenuOpen(false)} className="block text-center bg-[#c9a227] text-black py-4 font-bold tracking-widest rounded">
-              BOOK A TABLE
-            </a>
+                ORDER FOR DELIVERY <Truck size={20} />
+              </button>
+            ) : (
+              <div className="flex gap-4">
+                <button 
+                  type="button"
+                  onClick={() => setCheckoutStep('cart')}
+                  className="flex-1 border border-[#2a2a2a] py-4 rounded-lg font-bold tracking-widest hover:bg-white/5 transition-all"
+                >
+                  BACK
+                </button>
+                <button 
+                  type="submit"
+                  form="order-form"
+                  disabled={isSubmitting}
+                  className="flex-[2] bg-[#c9a227] text-black py-4 rounded-lg font-bold tracking-widest hover:bg-[#a68520] transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? 'PLACING ORDER...' : 'CONFIRM ORDER'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -320,75 +395,20 @@ export default function App() {
               AUTHENTIC CULINARY EXPERIENCE
             </span>
             <h1 className="font-display text-5xl md:text-7xl lg:text-9xl font-semibold leading-none mb-8">
-              <span className="block animate-[slideInLeft_1s_ease-out]">Where Fire</span>
-              <span className="block text-gradient animate-[slideInLeft_1.2s_ease-out]">Meets Flavor</span>
+              <span className="block">Where Fire</span>
+              <span className="block text-gradient">Meets Flavor</span>
             </h1>
-            <p className="text-[#8a8578] text-lg lg:text-xl leading-relaxed mb-10 max-w-xl animate-[fadeInUp_1.4s_ease-out]">
-              Experience the art of fine dining with locally sourced ingredients, open-fire cooking, and an atmosphere that ignites all your senses.
+            <p className="text-[#8a8578] text-lg lg:text-xl leading-relaxed mb-10 max-w-xl">
+              Experience the art of fine dining with locally sourced ingredients and open-fire cooking that ignites all your senses.
             </p>
-            <div className="flex flex-wrap gap-6 animate-[fadeInUp_1.6s_ease-out]">
-              <a href="#reservation" className="btn-shine bg-[#c9a227] text-black px-8 py-4 font-bold tracking-widest rounded flex items-center gap-2">
+            <div className="flex flex-wrap gap-6">
+              <a href="#reservation" className="bg-[#c9a227] text-black px-8 py-4 font-bold tracking-widest rounded flex items-center gap-2 hover:bg-[#a68520] transition-colors">
                 RESERVE YOUR TABLE <ArrowRight size={18} />
               </a>
-              <a href="#menu" className="border border-[#c9a227] text-[#c9a227] px-8 py-4 font-bold tracking-widest rounded hover:bg-[#c9a227] hover:text-black transition-all">
-                EXPLORE MENU
-              </a>
+              <button onClick={() => { document.getElementById('menu').scrollIntoView({ behavior: 'smooth' }); }} className="border border-[#c9a227] text-[#c9a227] px-8 py-4 font-bold tracking-widest rounded hover:bg-[#c9a227] hover:text-black transition-all">
+                ORDER NOW
+              </button>
             </div>
-          </div>
-        </div>
-        
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-50">
-          <span className="text-[10px] tracking-[0.5em] uppercase">Scroll</span>
-          <div className="w-[1px] h-16 bg-gradient-to-b from-[#c9a227] to-transparent animate-pulse"></div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="py-24 lg:py-32 relative">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 grid lg:grid-cols-2 gap-20 items-center">
-          <div className="reveal-left grid grid-cols-2 gap-4">
-            <div className="space-y-4">
-              <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80" className="rounded-lg aspect-[3/4] object-cover w-full" alt="Chef" />
-              <img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80" className="rounded-lg aspect-square object-cover w-full" alt="Food" />
-            </div>
-            <div className="space-y-4 pt-12">
-              <img src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=400&q=80" className="rounded-lg aspect-square object-cover w-full" alt="Bar" />
-              <img src="https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=600&q=80" className="rounded-lg aspect-[3/4] object-cover w-full" alt="Interior" />
-            </div>
-            <div className="absolute -bottom-6 -right-6 bg-[#141414] border border-[#2a2a2a] p-8 rounded-lg shadow-2xl hidden md:block">
-              <div className="text-5xl font-display font-bold text-[#c9a227]">15+</div>
-              <div className="text-xs tracking-widest text-[#8a8578]">YEARS OF EXCELLENCE</div>
-            </div>
-          </div>
-
-          <div className="reveal-right">
-            <span className="text-[#c9a227] font-medium tracking-[0.4em] text-xs">OUR STORY</span>
-            <h2 className="font-display text-4xl lg:text-6xl font-bold mt-4 mb-8">
-              A Legacy of <span className="text-gradient">Culinary Passion</span>
-            </h2>
-            <div className="w-16 h-[2px] bg-[#c9a227] mb-8"></div>
-            <p className="text-[#8a8578] text-lg leading-relaxed mb-6">
-              Founded in 2009, Ember & Oak emerged from a simple vision: to create a dining experience that celebrates the primal connection between fire and food. Our executive chef brings decades of expertise in open-fire cooking techniques.
-            </p>
-            <div className="grid grid-cols-2 gap-8 mb-10">
-              <div className="flex gap-4">
-                <div className="text-[#c9a227]"><Flame /></div>
-                <div>
-                  <h4 className="font-bold text-sm mb-1">Open Fire</h4>
-                  <p className="text-xs text-[#8a8578]">Traditional techniques</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="text-[#c9a227]"><Globe /></div>
-                <div>
-                  <h4 className="font-bold text-sm mb-1">Local Sourcing</h4>
-                  <p className="text-xs text-[#8a8578]">Farm to table</p>
-                </div>
-              </div>
-            </div>
-            <a href="#menu" className="inline-flex items-center gap-3 text-[#c9a227] font-bold tracking-widest text-sm hover:gap-5 transition-all">
-              DISCOVER OUR MENU <ArrowRight size={16} />
-            </a>
           </div>
         </div>
       </section>
@@ -396,10 +416,10 @@ export default function App() {
       {/* Menu Section */}
       <section id="menu" className="py-24 lg:py-32 bg-[#141414]">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16 reveal">
+          <div className="text-center mb-16 reveal active">
             <span className="text-[#c9a227] font-medium tracking-[0.4em] text-xs uppercase">Curated Selection</span>
             <h2 className="font-display text-4xl lg:text-6xl font-bold mt-4 mb-6">Our <span className="text-gradient">Signature</span> Dishes</h2>
-            <p className="text-[#8a8578] max-w-2xl mx-auto">Crafted with passion using the finest seasonal ingredients.</p>
+            <p className="text-[#8a8578] max-w-2xl mx-auto">Crafted with passion using the finest seasonal ingredients. Order for delivery or dine in.</p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 mb-16 reveal active">
@@ -422,7 +442,7 @@ export default function App() {
             {filteredMenu.map((item) => (
               <div 
                 key={item.id} 
-                className="reveal-scale active group bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#c9a227]/40 transition-all duration-500 animate-[fadeInUp_0.5s_ease-out]"
+                className="reveal-scale active group bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#c9a227]/40 transition-all duration-500"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -432,79 +452,16 @@ export default function App() {
                 </div>
                 <div className="p-6">
                   <h3 className="font-display text-2xl font-bold mb-2 group-hover:text-[#c9a227] transition-colors">{item.name}</h3>
-                  <p className="text-[#8a8578] text-sm leading-relaxed">{item.description}</p>
+                  <p className="text-[#8a8578] text-sm leading-relaxed mb-6">{item.description}</p>
+                  <button 
+                    onClick={() => addToCart(item)}
+                    className="w-full flex items-center justify-center gap-2 border border-[#2a2a2a] group-hover:border-[#c9a227] group-hover:bg-[#c9a227] group-hover:text-black py-3 rounded text-xs font-bold tracking-widest transition-all"
+                  >
+                    ADD TO CART <Plus size={16} />
+                  </button>
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Gallery */}
-      <section id="gallery" className="py-24 lg:py-32">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row justify-between items-end mb-16 gap-8 reveal">
-            <div>
-              <span className="text-[#c9a227] font-medium tracking-[0.4em] text-xs">VISUAL JOURNEY</span>
-              <h2 className="font-display text-4xl lg:text-6xl font-bold mt-4">Moments at <span className="text-gradient">Ember & Oak</span></h2>
-            </div>
-            <p className="text-[#8a8578] max-w-sm">A glimpse into our world of culinary artistry and elegant ambiance.</p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[250px]">
-            {galleryItems.map((item, i) => (
-              <div key={i} className={`${item.span} overflow-hidden rounded-lg reveal-scale`}>
-                <img src={item.image} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700 cursor-pointer" alt="Gallery" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-24 lg:py-32 bg-[#141414] overflow-hidden relative">
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center relative z-10">
-          <span className="text-[#c9a227] font-medium tracking-[0.4em] text-xs">TESTIMONIALS</span>
-          <h2 className="font-display text-4xl lg:text-6xl font-bold mt-4 mb-16">What Our <span className="text-gradient">Guests Say</span></h2>
-          
-          <div className="relative">
-             <div 
-              className="flex transition-transform duration-700 ease-in-out" 
-              style={{ transform: `translateX(-${currentTestimonial * 100}%)` }}
-            >
-              {testimonials.map((t, i) => (
-                <div key={i} className="w-full flex-shrink-0">
-                  <div className="flex justify-center gap-1 mb-8 text-[#c9a227]">
-                    {[...Array(t.rating)].map((_, j) => <Star key={j} fill="currentColor" size={20} />)}
-                  </div>
-                  <blockquote className="font-display text-2xl lg:text-4xl italic leading-relaxed mb-8">"{t.text}"</blockquote>
-                  <p className="font-bold text-[#f5f5f0]">{t.name}</p>
-                  <p className="text-[#8a8578] text-sm">{t.role}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-center items-center gap-6 mt-12">
-            <button 
-              onClick={() => setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
-              className="p-3 border border-[#2a2a2a] rounded-full hover:border-[#c9a227] text-[#8a8578] hover:text-[#c9a227] transition-all"
-            >
-              <ChevronLeft />
-            </button>
-            <div className="flex gap-2">
-              {testimonials.map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`h-1 rounded-full transition-all duration-300 ${currentTestimonial === i ? 'w-8 bg-[#c9a227]' : 'w-2 bg-[#2a2a2a]'}`}
-                />
-              ))}
-            </div>
-            <button 
-              onClick={() => setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)}
-              className="p-3 border border-[#2a2a2a] rounded-full hover:border-[#c9a227] text-[#8a8578] hover:text-[#c9a227] transition-all"
-            >
-              <ChevronRight />
-            </button>
           </div>
         </div>
       </section>
@@ -512,45 +469,38 @@ export default function App() {
       {/* Reservation Section */}
       <section id="reservation" className="py-24 lg:py-32 relative">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 grid lg:grid-cols-2 gap-20">
-          <div className="reveal-left">
-            <span className="text-[#c9a227] font-medium tracking-[0.4em] text-xs">RESERVATIONS</span>
+          <div className="reveal-left active">
+            <span className="text-[#c9a227] font-medium tracking-[0.4em] text-xs uppercase">Reservations</span>
             <h2 className="font-display text-4xl lg:text-6xl font-bold mt-4 mb-8 leading-tight">Book Your <span className="text-gradient">Table</span></h2>
-            <p className="text-[#8a8578] text-lg mb-12">Reserve your spot for an unforgettable dining experience. Every detail is perfect.</p>
-            
             <div className="space-y-8">
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 rounded-lg bg-[#c9a227]/10 flex items-center justify-center text-[#c9a227]"><MapPin /></div>
-                <div><h4 className="font-bold">Location</h4><p className="text-sm text-[#8a8578]"> RC7X+CW4, Tehsil Rd, Okara, Punjab</p></div>
+                <div><h4 className="font-bold">Location</h4><p className="text-sm text-[#8a8578]">Tehsil Rd, Okara, Punjab</p></div>
               </div>
               <div className="flex items-center gap-6">
                 <div className="w-12 h-12 rounded-lg bg-[#c9a227]/10 flex items-center justify-center text-[#c9a227]"><Clock /></div>
                 <div><h4 className="font-bold">Hours</h4><p className="text-sm text-[#8a8578]">Tue - Sun: 5:00 PM - 11:00 PM</p></div>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="w-12 h-12 rounded-lg bg-[#c9a227]/10 flex items-center justify-center text-[#c9a227]"><Phone /></div>
-                <div><h4 className="font-bold">Contact</h4><p className="text-sm text-[#8a8578]">+92 328 6930517</p></div>
-              </div>
             </div>
           </div>
 
-          <div className="reveal-right">
+          <div className="reveal-right active">
             <form onSubmit={handleReservation} className="bg-[#141414] border border-[#2a2a2a] p-8 md:p-12 rounded-2xl shadow-2xl">
-              <h3 className="font-display text-2xl font-bold mb-8">Make a Reservation</h3>
+              <h3 className="font-display text-2xl font-bold mb-8">Dine-in Reservation</h3>
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <input required name="fullName" type="text" placeholder="Full Name" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors" />
                 <input required name="email" type="email" placeholder="Email Address" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors" />
               </div>
               <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <select required name="guests" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors text-[#8a8578]">
-                  <option value="">Guests</option>
-                  {[1,2,3,4,5,6].map(n => <option key={n} value={n} className="text-[#f5f5f0]">{n} Guests</option>)}
-                  <option value="7+" className="text-[#f5f5f0]">7+ Guests</option>
+                <select required name="guests" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] text-[#8a8578]">
+                  <option value="">Number of Guests</option>
+                  {[1,2,3,4,5,6, '7+'].map(n => <option key={n} value={n}>{n} Guests</option>)}
                 </select>
-                <input required name="reservationDate" type="date" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors text-[#8a8578]" />
+                <input required name="reservationDate" type="date" className="bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] text-[#8a8578]" />
               </div>
-              <textarea name="specialRequests" placeholder="Special Requests" rows="4" className="w-full bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] transition-colors mb-8 resize-none"></textarea>
-              <button disabled={isSubmitting} type="submit" className={`btn-shine w-full bg-[#c9a227] text-black py-5 font-bold tracking-[0.2em] rounded-lg transition-transform active:scale-95 flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                {isSubmitting ? 'SAVING...' : 'CONFIRM RESERVATION'} <Check size={20} />
+              <textarea name="specialRequests" placeholder="Special Requests" rows="4" className="w-full bg-[#0a0a0a] border border-[#2a2a2a] p-4 rounded-lg focus:outline-none focus:border-[#c9a227] mb-8 resize-none"></textarea>
+              <button disabled={isSubmitting} type="submit" className="w-full bg-[#c9a227] text-black py-5 font-bold tracking-[0.2em] rounded-lg hover:bg-[#a68520] transition-all disabled:opacity-50">
+                {isSubmitting ? 'PROCESSING...' : 'CONFIRM RESERVATION'}
               </button>
             </form>
           </div>
@@ -560,72 +510,79 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-[#141414] border-t border-[#2a2a2a] pt-20 pb-10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
-          <div>
+          <div className="col-span-1 lg:col-span-1">
             <div className="flex items-center gap-3 mb-6">
               <div className="text-[#c9a227]"><Flame size={32} /></div>
               <span className="font-display text-2xl font-bold">Ember & Oak</span>
             </div>
-            <p className="text-[#8a8578] text-sm leading-relaxed mb-8">Where fire meets flavor. Join us for a journey of culinary excellence and artisanal techniques.</p>
+            <p className="text-[#8a8578] text-sm leading-relaxed mb-8">Redefining the open-fire culinary experience with tradition and modern artistry.</p>
             <div className="flex gap-4">
               {[Instagram, Facebook, Twitter].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 rounded-full border border-[#2a2a2a] flex items-center justify-center text-[#8a8578] hover:border-[#c9a227] hover:text-[#c9a227] transition-all">
-                  <Icon size={18} />
-                </a>
+                <a key={i} href="#" className="w-10 h-10 rounded-full border border-[#2a2a2a] flex items-center justify-center text-[#8a8578] hover:border-[#c9a227] hover:text-[#c9a227] transition-all"><Icon size={18} /></a>
               ))}
             </div>
           </div>
           <div>
-            <h4 className="font-display text-xl font-bold mb-8">Quick Links</h4>
+            <h4 className="font-display text-xl font-bold mb-8">Menu Highlights</h4>
             <ul className="space-y-4 text-sm text-[#8a8578]">
-              {['Home', 'About', 'Menu', 'Gallery', 'Reservation'].map(l => <li key={l}><a href={`#${l.toLowerCase()}`} className="hover:text-[#c9a227] transition-colors">{l}</a></li>)}
+              <li>Finger Fish</li>
+              <li>Chicken Dumplings</li>
+              <li>Signature Pizza</li>
+              <li>Beef Steak</li>
             </ul>
           </div>
           <div>
             <h4 className="font-display text-xl font-bold mb-8">Hours</h4>
             <ul className="space-y-4 text-sm text-[#8a8578]">
-              <li className="flex justify-between"><span>Tue - Thu</span> <span className="text-[#f5f5f0]">5PM - 10PM</span></li>
-              <li className="flex justify-between"><span>Fri - Sat</span> <span className="text-[#f5f5f0]">5PM - 11PM</span></li>
-              <li className="flex justify-between"><span>Sunday</span> <span className="text-[#f5f5f0]">4PM - 9PM</span></li>
+              <li className="flex justify-between"><span>Tue - Sat</span> <span className="text-[#f5f5f0]">5PM - 11PM</span></li>
+              <li className="flex justify-between"><span>Sunday</span> <span className="text-[#f5f5f0]">4PM - 10PM</span></li>
               <li className="flex justify-between"><span>Monday</span> <span className="text-[#c9a227]">CLOSED</span></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-display text-xl font-bold mb-8">Newsletter</h4>
-            <p className="text-sm text-[#8a8578] mb-6">Subscribe for exclusive offers and updates.</p>
-            <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-              <input type="email" placeholder="Your email" className="bg-[#0a0a0a] border border-[#2a2a2a] px-4 py-3 rounded-lg flex-1 text-sm focus:outline-none focus:border-[#c9a227]" />
-              <button className="bg-[#c9a227] text-black px-4 rounded-lg hover:bg-[#a68520] transition-colors"><Mail size={18} /></button>
-            </form>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-10 border-t border-[#2a2a2a] flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#8a8578] tracking-widest">
-          <p>© 2025 EMBER & OAK. ALL RIGHTS RESERVED.</p>
-          <div className="flex gap-8">
-            <a href="#" className="hover:text-[#c9a227]">PRIVACY POLICY</a>
-            <a href="#" className="hover:text-[#c9a227]">TERMS OF SERVICE</a>
+            <h4 className="font-display text-xl font-bold mb-8">Order Online</h4>
+            <p className="text-sm text-[#8a8578] mb-6">Get your favorite dishes delivered straight to your door.</p>
+            <button onClick={() => { document.getElementById('menu').scrollIntoView({ behavior: 'smooth' }); }} className="w-full bg-[#c9a227] text-black py-3 rounded-lg font-bold text-xs tracking-widest hover:bg-[#a68520] transition-colors">
+              VIEW DELIVERY MENU
+            </button>
           </div>
         </div>
       </footer>
 
-      {/* Success Modal */}
+      {/* Success Modals */}
       {showSuccessModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-[#0a0a0a]/90 backdrop-blur-md" onClick={() => setShowSuccessModal(false)}></div>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
           <div className="relative bg-[#141414] border border-[#c9a227] rounded-2xl p-10 max-w-md w-full text-center">
             <div className="w-20 h-20 bg-[#c9a227]/20 text-[#c9a227] rounded-full flex items-center justify-center mx-auto mb-8">
               <Check size={40} />
             </div>
-            <h3 className="font-display text-3xl font-bold mb-4">Confirmed!</h3>
-            <p className="text-[#8a8578] mb-8 leading-relaxed">Thank you for your reservation. We've sent a confirmation email to {user?.email || 'you'} and notified the owner. See you soon!</p>
-            <button 
-              onClick={() => setShowSuccessModal(false)}
-              className="bg-[#c9a227] text-black w-full py-4 font-bold tracking-widest rounded-lg"
-            >
+            <h3 className="font-display text-3xl font-bold mb-4">
+              {showSuccessModal === 'reservation' ? 'Reservation Confirmed!' : 'Order Placed!'}
+            </h3>
+            <p className="text-[#8a8578] mb-8 leading-relaxed">
+              {showSuccessModal === 'reservation' 
+                ? 'Thank you for choosing Ember & Oak. We have reserved your table and look forward to serving you soon.'
+                : 'Your order has been received! Our chefs are preparing your meal, and our rider will be with you shortly.'}
+            </p>
+            <button onClick={() => setShowSuccessModal(null)} className="bg-[#c9a227] text-black w-full py-4 font-bold tracking-widest rounded-lg">
               CLOSE
             </button>
           </div>
         </div>
       )}
+
+      {/* Floating Cart Button (Mobile Only) */}
+      <button 
+        onClick={() => setIsCartOpen(true)}
+        className="lg:hidden fixed bottom-6 right-6 z-[40] bg-[#c9a227] text-black w-16 h-16 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+      >
+        <ShoppingCart size={28} />
+        {cartCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-white text-black border-2 border-[#c9a227] text-[10px] w-6 h-6 rounded-full flex items-center justify-center font-bold">
+            {cartCount}
+          </span>
+        )}
+      </button>
     </div>
   );
 }
